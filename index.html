@@ -4,13 +4,19 @@
     <meta charset="utf-8">
     <title>Step 1 - A Basic Pie Chart</title>
     <link rel="stylesheet" href="normalize.css">
+    <link rel="stylesheet" href="angularD3.css">
   </head>
   <body>
-    <div id="chart"></div>
+    <div ng-app="chartApp" ng-controller="SalesController">
+      <h1>Today's Sales Chart</h1>
+      <div linear-chart chart-data="salesData"></div>
+      <h1>Tomorrow's Sales Chart (Using same directive but different data)</h1>
+      <div linear-chart chart-data="salesData2"></div>
+    </div>
     <script src="d3.v3.min.js"></script>
-    <script src="angularD3.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.7/angular.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.7/angular-route.js"></script>
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+    <script src="angularD3.js"></script>
   </body>
 </html>

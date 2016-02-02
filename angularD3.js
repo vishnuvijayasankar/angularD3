@@ -1,35 +1,133 @@
-      (function(d3) {
-        'use strict';
-        var dataset = [
-          { label: 'Abulia', count: 50 }, 
-          { label: 'Betelgeuse', count: 20 },
-          { label: 'Cantaloupe', count: 10 },
-          { label: 'Dijkstra', count: 20 }
-        ];
-        var width = 360;
-        var height = 360;
-        var radius = Math.min(width, height) / 2;
-        var color = d3.scale.category20b();
-        var svg = d3.select('#chart')
-          .append('svg')
-          .attr('width', width)
-          .attr('height', height)
-          .append('g')
-          .attr('transform', 'translate(' + (width / 2) + 
-            ',' + (height / 2) + ')');
-        var arc = d3.svg.arc()
-          .outerRadius(radius);
-        var pie = d3.layout.pie()
-          .value(function(d) { return d.count;
-         })
-          .sort(null);
-        var path = svg.selectAll('path')
-          .data(pie(dataset))
-          .enter()
-          .append('path')
-          .attr('d', arc)
-          .attr('fill', function(d, i) { 
-            return color(d.data.label);
-          });
-      })(window.d3);
-    
+var app = angular.module('chartApp', []);
+
+app.controller('SalesController', ['$scope','$interval', function($scope, $interval){
+    $scope.salesData=[
+        {hour: 1,sales: 54},
+        {hour: 2,sales: 66},
+        {hour: 3,sales: 77},
+        {hour: 4,sales: 70},
+        {hour: 5,sales: 60},
+        {hour: 6,sales: 63},
+        {hour: 7,sales: 55},
+        {hour: 8,sales: 47},
+        {hour: 9,sales: 55},
+        {hour: 10,sales: 30}
+    ];
+    $scope.salesData2=[
+        {hour: 1,sales: 75},
+        {hour: 2,sales: 52},
+        {hour: 3,sales: 63},
+        {hour: 4,sales: 50},
+        {hour: 5,sales: 24},
+        {hour: 6,sales: 30},
+        {hour: 7,sales: 55},
+        {hour: 8,sales: 25},
+        {hour: 9,sales: 58},
+        {hour: 10,sales: 57}
+    ];
+
+    $interval(function(){
+        var hour=$scope.salesData.length+1;
+        var hour2=$scope.salesData2.length+1;
+        var sales= Math.round(Math.random() * 100);
+        var sales2= Math.round(Math.random() * 100);
+        $scope.salesData.push({hour: hour, sales:sales});
+        $scope.salesData2.push({hour: hour2, sales:sales2});
+    }, 1000, 10);
+}]);
+
+app.directive('linearChart', function($parse, $window){
+   return{
+      restrict:'EA',
+      template:"<svg width='850' height='200'></svg>",
+       link: function(scope, elem, attrs){
+           var exp = $parse(attrs.chartData);
+
+           var salesDataToPlot=exp(scope);
+           var padding = 20;
+           var pathClass="path";
+           var xScale, yScale, xAxisGen, yAxisGen, lineFun;
+
+           var d3 = $window.d3;
+           var rawSvg=elem.find('svg');
+           var svg = d3.select(rawSvg[0]);
+
+           scope.$watchCollection(exp, function(newVal, oldVal){
+               salesDataToPlot=newVal;
+               redrawLineChart();
+           });
+
+           function setChartParameters(){
+
+               xScale = d3.scale.linear()
+                   .domain([salesDataToPlot[0].hour, salesDataToPlot[salesDataToPlot.length-1].hour])
+                   .range([padding + 5, rawSvg.attr("width") - padding]);
+
+               yScale = d3.scale.linear()
+                   .domain([0, d3.max(salesDataToPlot, function (d) {
+                       return d.sales;
+                   })])
+                   .range([rawSvg.attr("height") - padding, 0]);
+
+               xAxisGen = d3.svg.axis()
+                   .scale(xScale)
+                   .orient("bottom")
+                   .ticks(salesDataToPlot.length - 1);
+
+               yAxisGen = d3.svg.axis()
+                   .scale(yScale)
+                   .orient("left")
+                   .ticks(5);
+
+               lineFun = d3.svg.line()
+                   .x(function (d) {
+                       return xScale(d.hour);
+                   })
+                   .y(function (d) {
+                       return yScale(d.sales);
+                   })
+                   .interpolate("basis");
+           }
+         
+         function drawLineChart() {
+
+               setChartParameters();
+
+               svg.append("svg:g")
+                   .attr("class", "x axis")
+                   .attr("transform", "translate(0,180)")
+                   .call(xAxisGen);
+
+               svg.append("svg:g")
+                   .attr("class", "y axis")
+                   .attr("transform", "translate(20,0)")
+                   .call(yAxisGen);
+
+               svg.append("svg:path")
+                   .attr({
+                       d: lineFun(salesDataToPlot),
+                       "stroke": "blue",
+                       "stroke-width": 2,
+                       "fill": "none",
+                       "class": pathClass
+                   });
+           }
+
+           function redrawLineChart() {
+
+               setChartParameters();
+
+               svg.selectAll("g.y.axis").call(yAxisGen);
+
+               svg.selectAll("g.x.axis").call(xAxisGen);
+
+               svg.selectAll("."+pathClass)
+                   .attr({
+                       d: lineFun(salesDataToPlot)
+                   });
+           }
+
+           drawLineChart();
+       }
+   };
+});
